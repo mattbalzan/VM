@@ -1,0 +1,9 @@
+list vol
+sel vol 1
+shrink desired=20000
+list disk
+sel disk 0
+create partition primary size=20000
+format fs=ntfs quick label=WSUS
+assign letter=F
+exit
