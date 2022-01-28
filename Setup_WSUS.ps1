@@ -1,6 +1,15 @@
 ﻿# - WSUS + WID db Server Setup.
 # - M.Balzan CRSP Consultant (Jan 2022)
 
+# --| If we are running as a 32-bit process on an x64 system, re-launch as a 64-bit process
+if ("$env:PROCESSOR_ARCHITEW6432" -ne "ARM64")
+{
+    if (Test-Path "$($env:WINDIR)\SysNative\WindowsPowerShell\v1.0\powershell.exe")
+    {
+        & "$($env:WINDIR)\SysNative\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy bypass -NoProfile -File "$PSCommandPath"
+        Exit $lastexitcode
+    }
+}
 
 $Logfile = "C:\wsus.log"
 function LogWrite
@@ -28,8 +37,8 @@ LogWrite "."
 LogWrite "Downloading dependencies..."
 
 # - Download Report Viewer files.
-
-$url  = "http://go.microsoft.com/fwlink/?LinkID=239644&clcid=0x409"
+$amp = char(38)
+$url  = "http://go.microsoft.com/fwlink/?LinkID=239644$($amp)clcid=0x409"
 $download  = "$env:USERPROFILE\Desktop\SQLSysClrTypes.msi"
 $WebClient = New-Object System.Net.WebClient
 $WebClient.DownloadFile("$url","$download")
@@ -76,7 +85,7 @@ Set-WebConfiguration "/system.applicationHost/applicationPools/add[@name='WsusPo
 Set-WebConfiguration -Filter "/system.applicationHost/applicationPools/add[@name='WsusPool']/processModel/@maxProcesses" -Value 0
 
 LogWrite "Restarting IIS..."
-& iisreset
+start-process iisreset
 
 LogWrite "."
 # - Set WSUS vars
@@ -293,21 +302,3 @@ $Results = for ( $i = 0; $i -lt $max; $i++)
 Logwrite $Results | Format-Table *
 
 # - end
-
-<# These are WUA client commands used for troubleshooting / testing!
-
-WUAUCLT /detectnow: Detect and download updates that are available
-WUAUCLT /ReportNow: Tell the client to report its status back to the WSUS server
-WUAUCLT /UpdateNow  : Install updates now
-
-WUAUCLT /ShowSettingsDialog :  Show Windows Update settings dialog
-WUAUCLT /ShowWindowsUpdate: Shows the windows update dialog box or web page
-WUACULT /ResetAuthorization : when an update check occurs a cookie is stored that prevents a new update or check for 1 hour. So, you should use this to delete this cookie
-WUAUCLT /ResetEulas : Resets the accepted EULA
-WUAUCLT /SelfUpdateManaged : Scan for windows updates using WSUS
-WUAUCLT / SelfUpdateUnmanaged : Triggers a windows update scan using the windows update website
-WUAUCLT /ShowOptions : Open the windows update settings window
-WUACLT /ShowFeaturedOptInDialog : Show Opt-In dialog for featured updates
-WUAUCLT /DemoUI : Show the icons for windows update
-WUAUCLT / ShowFeaturedUpdates : Open windows update dialog and shows the featured updates
-#>
