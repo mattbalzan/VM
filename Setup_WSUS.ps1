@@ -27,7 +27,6 @@ function LogWrite
    Write-Host $WriteLine
 }
 
-Start-Process -FilePath diskpart -ArgumentList "/s diskpart.txt > C:\disks.txt" 
 
 
 LogWrite "WSUS SETUP"
