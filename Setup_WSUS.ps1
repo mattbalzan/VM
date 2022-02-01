@@ -1,15 +1,5 @@
-﻿# - WSUS + WID db Server Setup.
+# - WSUS + WID db Server Setup.
 # - M.Balzan CRSP Consultant (Jan 2022)
-
-# --| If we are running as a 32-bit process on an x64 system, re-launch as a 64-bit process
-if ("$env:PROCESSOR_ARCHITEW6432" -ne "ARM64")
-{
-    if (Test-Path "$($env:WINDIR)\SysNative\WindowsPowerShell\v1.0\powershell.exe")
-    {
-        & "$($env:WINDIR)\SysNative\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy bypass -NoProfile -File "$PSCommandPath"
-        Exit $lastexitcode
-    }
-}
 
 $Logfile = "C:\wsus.log"
 function LogWrite
@@ -36,8 +26,7 @@ LogWrite "."
 LogWrite "Downloading dependencies..."
 
 # - Download Report Viewer files.
-$amp = char(38)
-$url  = "http://go.microsoft.com/fwlink/?LinkID=239644$($amp)clcid=0x409"
+$url  = "http://go.microsoft.com/fwlink/?LinkID=239644&clcid=0x409"
 $download  = "$env:USERPROFILE\Desktop\SQLSysClrTypes.msi"
 $WebClient = New-Object System.Net.WebClient
 $WebClient.DownloadFile("$url","$download")
@@ -251,9 +240,9 @@ $CGS = ($WSUS.GetComputerTargetGroups()).Name
 
 LogWrite "WSUS setup complete! (Log is located at: $Logfile)"
 LogWrite "--------------------------------------------------"
-LogWrite "."
 
-# Report Summary of WSUS setup...
+
+<# Report Summary of WSUS setup...
 
 $Products = ($WSUS.GetSubscription().GetUpdateCategories()).title
 $Classes  = ($WSUS.GetSubscription().GetUpdateClassifications()).title
@@ -301,3 +290,4 @@ $Results = for ( $i = 0; $i -lt $max; $i++)
 Logwrite $Results | Format-Table *
 
 # - end
+#>
