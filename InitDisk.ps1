@@ -1,5 +1,6 @@
-﻿$disks = Get-Disk | Where partitionstyle -eq 'raw' | sort number
+$driveletter = [char]"F"
 
-$disk | Initialize-Disk -PartitionStyle MBR -PassThru |
-        New-Partition -UseMaximumSize -DriveLetter F |
-        Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false -Force
+Get-Disk | Where-Object partitionstyle -eq raw |
+    Initialize-Disk -PartitionStyle GPT -PassThru |
+    New-Partition -DriveLetter $driveletter -UseMaximumSize |
+    Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false
