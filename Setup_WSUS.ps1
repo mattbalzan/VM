@@ -39,13 +39,13 @@ LogWrite "Downloading dependencies..."
 
 # - Download Report Viewer files.
 $url  = "http://go.microsoft.com/fwlink/?LinkID=239644&clcid=0x409"
-$download  = "$env:USERPROFILE\Desktop\SQLSysClrTypes.msi"
+$download  = "C:\SQLSysClrTypes.msi"
 Invoke-WebRequest -Uri $url -OutFile $download
 LogWrite "SQLsysClrTypes downloaded."
 
 
 $url2 = "https://download.microsoft.com/download/F/B/7/FB728406-A1EE-4AB5-9C56-74EB8BDDF2FF/ReportViewer.msi"
-$download2 = "$env:USERPROFILE\Desktop\ReportViewer.msi"
+$download2 = "C:\ReportViewer.msi"
 Invoke-WebRequest -Uri $url2 -OutFile $download2
 LogWrite "Report Viewer downloaded."
 
