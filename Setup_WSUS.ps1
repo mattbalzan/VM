@@ -130,14 +130,12 @@ $WSUS.CreateComputerTargetGroup("Windows 10") | Out-Null
 LogWrite "Syncing categories/products only..."
 Logwrite "."
 
-
-
 $subscription = $WSUS.GetSubscription()
 $subscription.StartSynchronizationForCategoryOnly()
 
 
 
-<# While ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
+While ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
 
     if ((Get-ChildItem -Path 'C:\Windows\WID\Data\SUSDB.mdf').length -lt 1GB) 
     
@@ -224,7 +222,7 @@ $subscription.Save()
 # - Start the main sync and display sync progress.
 $subscription.StartSynchronization()
 
-<#
+
 LogWrite "."
 LogWrite "Starting WSUS Sync, be aware this will take some time!" -ForegroundColor Magenta
 LogWrite "..."
@@ -268,13 +266,13 @@ while ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
 Logwrite "."
 LogWrite "WSUS sync completed!" -ForegroundColor Green
 LogWrite "."
-#>
+
 
 
 
 
 #$CGS = ($WSUS.GetComputerTargetGroups()).Name
-#>
+
 
 LogWrite "WSUS setup complete! (Log is located at: $Logfile)"
 LogWrite "--------------------------------------------------"
