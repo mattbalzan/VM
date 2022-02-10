@@ -95,7 +95,7 @@ Set-WebConfiguration "/system.applicationHost/applicationPools/add[@name='WsusPo
 Set-WebConfiguration -Filter "/system.applicationHost/applicationPools/add[@name='WsusPool']/processModel/@maxProcesses" -Value 0
 
 LogWrite "Restarting IIS..."
-start-process iisreset
+Start-Process iisreset -Wait
 
 LogWrite "."
 # - Set WSUS vars
