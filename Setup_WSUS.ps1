@@ -1,6 +1,16 @@
 # - WSUS + WID db Server Setup.
 # - M.Balzan CRSP Consultant (Jan 2022)
 
+# --| If we are running as a 32-bit process on an x64 system, re-launch as a 64-bit process
+if ("$env:PROCESSOR_ARCHITEW6432" -ne "ARM64")
+{
+    if (Test-Path "$($env:WINDIR)\SysNative\WindowsPowerShell\v1.0\powershell.exe")
+    {
+        & "$($env:WINDIR)\SysNative\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy bypass -NoProfile -File "$PSCommandPath"
+        Exit $lastexitcode
+    }
+}
+
 $Logfile = "C:\wsus.log"
 function LogWrite
 {
@@ -17,7 +27,9 @@ function LogWrite
    Write-Host $WriteLine
 }
 
-
+# Create the secure SSL channel
+Log-Write "Enabling connection over TLS for better compability on servers" -ForegroundColor Green
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12
 
 LogWrite "WSUS SETUP"
 LogWrite "----------"
@@ -28,22 +40,20 @@ LogWrite "Downloading dependencies..."
 # - Download Report Viewer files.
 $url  = "http://go.microsoft.com/fwlink/?LinkID=239644&clcid=0x409"
 $download  = "$env:USERPROFILE\Desktop\SQLSysClrTypes.msi"
-$WebClient = New-Object System.Net.WebClient
-$WebClient.DownloadFile("$url","$download")
+Invoke-WebRequest -Uri $url -OutFile $download
 LogWrite "SQLsysClrTypes downloaded."
 
 
 $url2 = "https://download.microsoft.com/download/F/B/7/FB728406-A1EE-4AB5-9C56-74EB8BDDF2FF/ReportViewer.msi"
 $download2 = "$env:USERPROFILE\Desktop\ReportViewer.msi"
-$WebClient = New-Object System.Net.WebClient
-$WebClient.DownloadFile("$url2","$download2")
+Invoke-WebRequest -Uri $url2 -OutFile $download2
 LogWrite "Report Viewer downloaded."
 
 LogWrite "Installing SQLSysClrTypes..."
-start-process -FilePath $download -ArgumentList -qn -Wait
+Start-Process -FilePath msiexec -ArgumentList "/i $download -qn" -Wait
 
 LogWrite "Installing Report Viewer..."
-start-process -FilePath $download2 -ArgumentList -qn -Wait
+Start-Process -FilePath msiexec -ArgumentList "/i $download2 -qn" -Wait
 
 LogWrite "..."
 # - Install WSUS role, services, WID DB, console and content directory.
@@ -53,10 +63,22 @@ Install-WindowsFeature -Name UpdateServices -IncludeManagementTools
 
 LogWrite "..."
 
+# - Initialise disk F for WSUS content.
+
+$driveletter = [char]"F"
+LogWrite "Initialising new drive F:"
+
+Get-Disk | Where-Object partitionstyle -eq raw |
+    Initialize-Disk -PartitionStyle GPT -PassThru |
+    New-Partition -DriveLetter $driveletter -UseMaximumSize |
+    Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false
+
+Logwrite "."
+
 LogWrite "Adding new WSUS folder to drive F:"
 New-Item -Name WSUS -Type Directory -Path F:\ -Force
 
-Logwrite "..."
+Logwrite "."
 # - Run WSUS Post Install configuration.
 LogWrite "Running Post Install task..."
 
@@ -92,14 +114,30 @@ $WSUSConfig.AllUpdateLanguagesEnabled = $false
 $WSUSConfig.SetEnabledUpdateLanguages("en")           
 $WSUSConfig.Save()
 
+# Create computer target groups
+LogWrite "Adding target computer groups..."
+
+$WSUS.CreateComputerTargetGroup("Windows Server 2012 R2") | Out-Null
+
+$WSUS.CreateComputerTargetGroup("Windows Server 2016") | Out-Null
+
+$WSUS.CreateComputerTargetGroup("Windows Server 2019") | Out-Null
+
+$WSUS.CreateComputerTargetGroup("Windows 10") | Out-Null
+
+
 # - Get WSUS subscription and perform initial synchronization to get latest categories
 LogWrite "Syncing categories/products only..."
 Logwrite "."
 
+
+
 $subscription = $WSUS.GetSubscription()
 $subscription.StartSynchronizationForCategoryOnly()
 
-While ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
+
+
+<# While ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
 
     if ((Get-ChildItem -Path 'C:\Windows\WID\Data\SUSDB.mdf').length -lt 1GB) 
     
@@ -113,7 +151,11 @@ While ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
     
     Start-Sleep -seconds 5  
 
-}
+} 
+
+Write-Progress -Activity 
+
+
 LogWrite "."
 LogWrite "Categories sync complete!"
 LogWrite "..."
@@ -162,9 +204,10 @@ Get-WsusClassification | Where-Object {
 
 $Classes = ($WSUS.GetSubscription().GetUpdateClassifications()).title
 
-
-
 LogWrite "Classifications Set: $Classes"
+
+
+
 
 
 # - Set synchronizations
@@ -180,6 +223,8 @@ $subscription.Save()
 
 # - Start the main sync and display sync progress.
 $subscription.StartSynchronization()
+
+<#
 LogWrite "."
 LogWrite "Starting WSUS Sync, be aware this will take some time!" -ForegroundColor Magenta
 LogWrite "..."
@@ -223,20 +268,13 @@ while ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
 Logwrite "."
 LogWrite "WSUS sync completed!" -ForegroundColor Green
 LogWrite "."
+#>
 
-# Create computer target groups
-LogWrite "Adding target computer groups..."
 
-$WSUS.CreateComputerTargetGroup("Windows Server 2012 R2") | Out-Null
 
-$WSUS.CreateComputerTargetGroup("Windows Server 2016") | Out-Null
 
-$WSUS.CreateComputerTargetGroup("Windows Server 2019") | Out-Null
-
-$WSUS.CreateComputerTargetGroup("Windows 10") | Out-Null
-
-$CGS = ($WSUS.GetComputerTargetGroups()).Name
-
+#$CGS = ($WSUS.GetComputerTargetGroups()).Name
+#>
 
 LogWrite "WSUS setup complete! (Log is located at: $Logfile)"
 LogWrite "--------------------------------------------------"
