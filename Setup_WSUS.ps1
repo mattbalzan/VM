@@ -278,7 +278,7 @@ LogWrite "WSUS setup complete! (Log is located at: $Logfile)"
 LogWrite "--------------------------------------------------"
 
 
-<# Report Summary of WSUS setup...
+# Report Summary of WSUS setup...
 
 $Products = ($WSUS.GetSubscription().GetUpdateCategories()).title
 $Classes  = ($WSUS.GetSubscription().GetUpdateClassifications()).title
@@ -326,4 +326,3 @@ $Results = for ( $i = 0; $i -lt $max; $i++)
 Logwrite $Results | Format-Table *
 
 # - end
-#>
