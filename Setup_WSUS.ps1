@@ -258,7 +258,7 @@ while ($subscription.GetSynchronizationStatus() -ne 'NotProcessing') {
 
     $SUSDBtrun = [math]::Round($SUSDB)
 
-    Write-Host -NoNewline "`rSync status: $($subscription.GetSynchronizationStatus()) | SUSDB size: $SUSDBtrun $size | Complete: $percent $bar"
+    Log-Write -NoNewline "`rSync status: $($subscription.GetSynchronizationStatus()) | SUSDB size: $SUSDBtrun $size | Complete: $percent $bar"
     Start-Sleep -seconds 10  
 
 }
