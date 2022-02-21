@@ -28,7 +28,7 @@ function LogWrite
 }
 
 # Create the secure SSL channel
-Log-Write "Enabling connection over TLS for better compability on servers" -ForegroundColor Green
+LogWrite "Enabling connection over TLS for better compability on servers" -ForegroundColor Green
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls -bor [Net.SecurityProtocolType]::Tls11 -bor [Net.SecurityProtocolType]::Tls12
 
 LogWrite "WSUS SETUP"
@@ -73,12 +73,12 @@ Get-Disk | Where-Object partitionstyle -eq raw |
     New-Partition -DriveLetter $driveletter -UseMaximumSize |
     Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false
 
-Logwrite "."
+LogWrite "."
 
 LogWrite "Adding new WSUS folder to drive F:"
 New-Item -Name WSUS -Type Directory -Path F:\ -Force
 
-Logwrite "."
+LogWrite "."
 # - Run WSUS Post Install configuration.
 LogWrite "Running Post Install task..."
 
