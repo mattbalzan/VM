@@ -163,7 +163,6 @@ LogWrite "..."
 LogWrite "Setting WSUS Products..."
 
 $prods = @( "Windows Server 2016",
-            "Windows Server Manager - Windows Server Update Services (WSUS) Dynamic Installer",
             "Windows Server 2019"
             ) 
         
@@ -267,16 +266,11 @@ Logwrite "."
 LogWrite "WSUS sync completed!" -ForegroundColor Green
 LogWrite "."
 
-
-
-
-
-#$CGS = ($WSUS.GetComputerTargetGroups()).Name
+$CGS = ($WSUS.GetComputerTargetGroups()).Name
 
 
 LogWrite "WSUS setup complete! (Log is located at: $Logfile)"
 LogWrite "--------------------------------------------------"
-
 
 # Report Summary of WSUS setup...
 
@@ -323,6 +317,6 @@ $Results = for ( $i = 0; $i -lt $max; $i++)
     }
 }
 
-Logwrite $Results | Format-Table *
+LogWrite $Results | Format-Table *
 
-# - end
+# end region
