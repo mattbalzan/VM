@@ -12,6 +12,8 @@ if ("$env:PROCESSOR_ARCHITEW6432" -ne "ARM64")
 }
 
 $Logfile = "C:\wsus.log"
+$timer = [System.Diagnostics.Stopwatch]::StartNew()
+
 function LogWrite
 {
    Param ([string]$logstring)
@@ -22,7 +24,7 @@ function LogWrite
    Rename-Item $Logfile $Logfile".bak" -Force
    }
    }
-   $WriteLine = (Get-Date).ToString() + " | " + $logstring
+   $WriteLine = (Get-Date).ToString() + " [ " + $timer.Elapsed.ToString("hh\:mm\:ss") + " ] " + $logstring
    Add-content $Logfile -value $WriteLine
    Write-Host $WriteLine
 }
@@ -33,7 +35,6 @@ LogWrite "Enabling connection over TLS for better compability on servers" -Foreg
 
 LogWrite "WSUS SETUP"
 LogWrite "----------"
-LogWrite "."
 
 LogWrite "Downloading dependencies..."
 
@@ -64,7 +65,6 @@ Install-WindowsFeature -Name UpdateServices -IncludeManagementTools
 LogWrite "..."
 
 # - Initialise disk F for WSUS content.
-
 $driveletter = [char]"F"
 LogWrite "Initialising new drive F:"
 
@@ -73,23 +73,21 @@ Get-Disk | Where-Object partitionstyle -eq raw |
     New-Partition -DriveLetter $driveletter -UseMaximumSize |
     Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false
 
-LogWrite "."
 
 LogWrite "Adding new WSUS folder to drive F:"
 New-Item -Name WSUS -Type Directory -Path F:\ -Force
 
-LogWrite "."
+
 # - Run WSUS Post Install configuration.
 LogWrite "Running Post Install task..."
-
 Set-Location "C:\Program Files\Update Services\Tools"
-
 .\wsusutil.exe postinstall CONTENT_DIR=F:\WSUS
+LogWrite "Post task complete."
 
-LogWrite "..."
 # - Set the Private Memory Limit (KB) for the WSUS Application Pool to 0 (zero).
 LogWrite "Applying IIS Web configurations (WSUS Pool Memory & Max Processes)..."
 Set-WebConfiguration "/system.applicationHost/applicationPools/add[@name='WsusPool']/recycling/periodicRestart/@privateMemory" -Value 0
+
 
 # - Set maximum number of worker processes to 0 (unlimited) and reset IIS.
 Set-WebConfiguration -Filter "/system.applicationHost/applicationPools/add[@name='WsusPool']/processModel/@maxProcesses" -Value 0
@@ -97,7 +95,7 @@ Set-WebConfiguration -Filter "/system.applicationHost/applicationPools/add[@name
 LogWrite "Restarting IIS..."
 Start-Process iisreset -Wait
 
-LogWrite "."
+
 # - Set WSUS vars
 
 $WSUS = Get-WsusServer
@@ -270,6 +268,8 @@ $CGS = ($WSUS.GetComputerTargetGroups()).Name
 
 
 LogWrite "WSUS setup complete! (Log is located at: $Logfile)"
+$timer.Stop()
+LogWrite "Total WSUS build time: $($timer.Elapsed.ToString("hh\:mm\:ss"))"
 LogWrite "--------------------------------------------------"
 
 # Report Summary of WSUS setup...
