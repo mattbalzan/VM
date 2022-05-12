@@ -38,16 +38,18 @@ LogWrite "----------"
 
 LogWrite "Downloading dependencies..."
 
-# - Download Report Viewer files.
+# - Download Report Viewer dependency files.
 $url  = "http://go.microsoft.com/fwlink/?LinkID=239644&clcid=0x409"
 $download  = "C:\SQLSysClrTypes.msi"
-Invoke-WebRequest -Uri $url -OutFile $download
+Start-BitsTransfer -Source $url -Destination $download -Priority High
+Get-BitsTransfer | Complete-BitsTransfer
 LogWrite "SQLsysClrTypes downloaded."
 
 
 $url2 = "https://download.microsoft.com/download/F/B/7/FB728406-A1EE-4AB5-9C56-74EB8BDDF2FF/ReportViewer.msi"
 $download2 = "C:\ReportViewer.msi"
-Invoke-WebRequest -Uri $url2 -OutFile $download2
+Start-BitsTransfer -Source $url2 -Destination $download2 -Priority High
+Get-BitsTransfer | Complete-BitsTransfer
 LogWrite "Report Viewer downloaded."
 
 LogWrite "Installing SQLSysClrTypes..."
@@ -70,8 +72,8 @@ LogWrite "Initialising new drive F:"
 
 Get-Disk | Where-Object partitionstyle -eq raw |
     Initialize-Disk -PartitionStyle GPT -PassThru |
-    New-Partition -DriveLetter $driveletter -UseMaximumSize |
-    Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false
+        New-Partition -DriveLetter $driveletter -UseMaximumSize |
+            Format-Volume -FileSystem NTFS -NewFileSystemLabel "WSUS" -Confirm:$false
 
 
 LogWrite "Adding new WSUS folder to drive F:"
@@ -112,7 +114,7 @@ $WSUSConfig.AllUpdateLanguagesEnabled = $false
 $WSUSConfig.SetEnabledUpdateLanguages("en")           
 $WSUSConfig.Save()
 
-# Create computer target groups
+# Create computer target groups (add/crete & edit the names only in the quotes where needed)
 LogWrite "Adding target computer groups..."
 
 $WSUS.CreateComputerTargetGroup("Windows Server 2012 R2") | Out-Null
